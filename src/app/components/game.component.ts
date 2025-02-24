@@ -1,12 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
-
-interface Question {
-  id: number | null;
-  text: string;
-  answer: string;
-}
+import { QuestionModel } from '../models/question.mode';
 
 @Component({
   selector: 'app-game',
@@ -23,18 +18,18 @@ export class GameComponent {
     { id: 5, text: 'What is the boiling point of water (°C)?', answer: '100' },
   ]);
 
-  public randomQuestion$ = new BehaviorSubject<Question | null>(null);
+  public randomQuestion$ = new BehaviorSubject<QuestionModel | null>(null);
 
   constructor() {
     this.setRandomQuestion();
   }
 
   // Questions
-  public get questions(): Question[] {
+  public get questions(): QuestionModel[] {
     return this.questions$.getValue();
   }
 
-  public get randomQuestion(): Question | null {
+  public get randomQuestion(): QuestionModel | null {
     return this.randomQuestion$.getValue();
   }
 
