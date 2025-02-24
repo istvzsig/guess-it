@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
-import { QuestionModel } from '../models/question.mode';
+import { QuestionModel } from '../models/question.model';
 
 @Component({
   selector: 'app-game',
