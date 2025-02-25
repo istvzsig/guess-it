@@ -1,4 +1,6 @@
-<p>Id: {{ randomQuestion?.id }}</p>
-<p>Question: {{ randomQuestion?.text }}</p>
-<p>Answer: {{ randomQuestion?.answer }}</p>
-<button (click)="this.setRandomQuestion()">NEXT</button>
+@if(randomQuestion) {
+<p>Id: {{ randomQuestion.id }}</p>
+<p>Question: {{ randomQuestion.text }}</p>
+<p>Answer: {{ randomQuestion.answer }}</p>
+}
+<button (click)="updateNextQuestion()">NEXT</button>
