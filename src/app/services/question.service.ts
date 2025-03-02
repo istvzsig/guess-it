@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { BehaviorSubject, map, Observable, shareReplay } from 'rxjs';
+import { BehaviorSubject, map, shareReplay } from 'rxjs';
 
 import { OPEN_TDB_API_URL } from 'src/app/environments/api.environment';
 
@@ -30,48 +30,57 @@ export class QuestionService {
 
     if (cachedQuestion) {
       console.log('Question is set from cache:', cachedQuestion);
-      this.randomQuestionSubject$.next(cachedQuestion);
+      this.setNextQuestion(cachedQuestion);
       return;
     }
 
-    this.fetchRandomQuestion().subscribe((response) => {
-      if (response.error) {
-        // TODO: Handle error in UI
-        return;
-      }
-      if (response.data) {
-        this.randomQuestionSubject$.next(response.data);
-      }
-    });
+    this.fetchRandomQuestion();
   }
 
-  private fetchRandomQuestion(): Observable<APIResponseModel> {
-    return this._http.get<APIRequestModel>(OPEN_TDB_API_URL).pipe(
-      map((response): APIResponseModel => {
-        if (response.response_code === 0) {
-          console.log(response);
-          const question: APIResponseQuestionModel = response.results[0];
+  private setNextQuestion(question: QuestionModel): void {
+    this.randomQuestionSubject$.next(question);
+  }
 
-          const newQuestion: QuestionModel = {
-            id: 'asdsds', // TODO: Replace dummy identifier
-            question: question.question,
-            category: question.category,
-            difficulty: question.difficulty,
-            type: question.type,
-            answers: [question.correct_answer, ...question.incorrect_answers],
+  private generateQuestionId(question: APIResponseQuestionModel): string {
+    return question.question.split(' ').join('').slice(0, 16);
+  }
+
+  private fetchRandomQuestion(): void {
+    this._http
+      .get<APIRequestModel>(OPEN_TDB_API_URL)
+      .pipe(
+        map((response): APIResponseModel => {
+          if (response.response_code === 0) {
+            const question: APIResponseQuestionModel = response.results[0];
+
+            const newQuestion: QuestionModel = {
+              id: this.generateQuestionId(question),
+              question: question.question,
+              category: question.category,
+              difficulty: question.difficulty,
+              type: question.type,
+              answers: [question.correct_answer, ...question.incorrect_answers],
+            };
+
+            this._cacheService.set<QuestionModel>(newQuestion.id, newQuestion);
+            console.log(newQuestion);
+            return { data: newQuestion };
+          }
+          return {
+            error: new Error('Error while fetching question.'),
           };
-
-          console.table({ question, newQuestion });
-
-          this._cacheService.set<QuestionModel>(newQuestion.id, newQuestion);
-          return { error: '', data: newQuestion };
+        }),
+        shareReplay(1)
+      )
+      .subscribe((response) => {
+        if (response.error) {
+          // TODO: Handle error in UI
+          // this._errorService.setError('')
+          return;
         }
-        return {
-          error: new Error('Error while fetching question.'),
-          data: null,
-        };
-      }),
-      shareReplay(1)
-    );
+        if (response.data) {
+          this.setNextQuestion(response.data);
+        }
+      });
   }
 }

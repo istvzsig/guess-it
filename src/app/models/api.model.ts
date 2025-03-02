@@ -11,6 +11,6 @@ export interface APIError {
 }
 
 export interface APIResponseModel {
-  error: APIError | string;
-  data: QuestionModel | null;
+  error?: APIError | string;
+  data?: QuestionModel | null;
 }
