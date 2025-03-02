@@ -1,6 +1,8 @@
 @if(randomQuestion) {
-<p>Id: {{ randomQuestion.id }}</p>
-<p>Question: {{ randomQuestion.text }}</p>
-<p>Answer: {{ randomQuestion.answer }}</p>
+<p>Category: {{ randomQuestion.category }}</p>
+<p>Question: {{ randomQuestion.question }}</p>
+<p>Difficulty: {{ randomQuestion.difficulty }}</p>
+<button [disabled]="" (click)="updateNextQuestion()">NEXT</button>
+} @else {
+<p>No data available.</p>
 }
-<button (click)="updateNextQuestion()">NEXT</button>

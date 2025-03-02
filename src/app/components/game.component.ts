@@ -1,27 +1,41 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { QuestionService } from '../src/app/services/question.service';
+
+import { Subscription } from 'rxjs';
+
+import { QuestionService } from '../services/question.service';
 import { QuestionModel } from 'src/app/models/question.model';
-import { map } from 'rxjs';
 
 @Component({
   selector: 'app-game',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './game.component.html',
-  styleUrl: './game.component.css',
+  styleUrls: ['./game.component.css'],
 })
-export class GameComponent {
+export class GameComponent implements OnInit, OnDestroy {
   private _questionService = inject(QuestionService);
+  private subscription: Subscription = new Subscription();
 
   public randomQuestion: QuestionModel | null = null;
 
   constructor() {
     this._questionService.setRandomQuestion();
-    this.randomQuestion = this._questionService.randomQuestion$.getValue();
+  }
+
+  ngOnInit(): void {
+    this.subscription = this._questionService.randomQuestionSubject$.subscribe(
+      (question) => {
+        this.randomQuestion = question;
+      }
+    );
   }
 
   public updateNextQuestion(): void {
     this._questionService.setRandomQuestion();
-    this.randomQuestion = this._questionService.randomQuestion$.getValue();
+  }
+
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
   }
 }
