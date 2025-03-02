@@ -1,21 +1,21 @@
-import { HttpClient } from "@angular/common/http";
-import { inject, Injectable } from "@angular/core";
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
 
-import { BehaviorSubject, map, shareReplay } from "rxjs";
+import { BehaviorSubject, map, shareReplay } from 'rxjs';
 
-import { OPEN_TDB_API_URL } from "src/app/environments/api.environment";
+import { OPEN_TDB_API_URL } from 'src/app/environments/api.environment';
 
-import { APIRequestModel, APIResponseModel } from "src/app/models/api.model";
+import { APIRequestModel, APIResponseModel } from 'src/app/models/api.model';
 import {
   Answer,
   AnswerOption,
   APIResponseQuestionModel,
   QuestionModel,
-} from "src/app/models/question.model";
-import { CacheService } from "./cache.service";
+} from 'src/app/models/question.model';
+import { CacheService } from './cache.service';
 
 @Injectable({
-  providedIn: "root",
+  providedIn: 'root',
 })
 export class QuestionService {
   private _http = inject(HttpClient);
@@ -23,15 +23,15 @@ export class QuestionService {
   // private _errorService = inject();
 
   public randomQuestionSubject$ = new BehaviorSubject<QuestionModel | null>(
-    null,
+    null
   );
 
   public setRandomQuestion(): void {
     const cachedQuestion: QuestionModel | undefined =
-      this._cacheService.get("asdsds");
+      this._cacheService.get('asdsds');
 
     if (cachedQuestion) {
-      console.log("Question is set from cache:", cachedQuestion);
+      console.log('Question is set from cache:', cachedQuestion);
       this.setNextQuestion(cachedQuestion);
       return;
     }
@@ -44,7 +44,7 @@ export class QuestionService {
   }
 
   private generateQuestionId(question: APIResponseQuestionModel): string {
-    return question.question.split(" ").join("").slice(0, 16);
+    return question.question.split(' ').join('').slice(0, 16);
   }
 
   private fetchRandomQuestion(): void {
@@ -74,12 +74,12 @@ export class QuestionService {
             return { data: newQuestion };
           }
           return {
-            error: new Error("Error while fetching question."),
+            error: new Error('Error while fetching question.'),
           };
         }),
-        shareReplay(1),
+        shareReplay(1)
       )
-      .subscribe(response => {
+      .subscribe((response) => {
         if (response.error) {
           // TODO: Handle error in UI
           // this._errorService.setError('')
@@ -91,12 +91,12 @@ export class QuestionService {
       });
   }
 
-  private formatAnswers(answers: string[] | null): Answer[] {
+  private formatAnswers(answers: string[] | null): Answer[] | null {
     if (!answers || answers.length === 0) {
-      return [{ 0: "no aswers available" }];
+      return null;
     }
 
-    const enumAnswers = answers.map((answer, index) => {
+    return answers.map((answer, index) => {
       const option =
         AnswerOption[
           Object.keys(AnswerOption)[index] as keyof typeof AnswerOption
@@ -104,6 +104,5 @@ export class QuestionService {
 
       return { [option]: answer };
     });
-    return enumAnswers;
   }
 }

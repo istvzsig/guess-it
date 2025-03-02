@@ -1,13 +1,16 @@
 @if(randomQuestion) {
 <p>Category: {{ randomQuestion.category }}</p>
 <h3>Question: {{ randomQuestion.question.toString() }}</h3>
-<p>Difficulty: {{ randomQuestion.difficulty }}</p>
+<p>
+  Difficulty: {{ randomQuestion.difficulty[0].toUpperCase()
+  + randomQuestion.difficulty.slice(1, randomQuestion.difficulty.length)}}
+</p>
 
 <div>
   <!-- prettier-ignore -->
   @for( answer of randomQuestion.answers; track answer) {
   @for(option of answer | keyvalue; track option) {
-  <p>{{ option.key }}: {{ option.value }}</p>
+  <p>{{ option.key }}: {{ option.value | decodeHtml }}</p>
   }
   }
 </div>

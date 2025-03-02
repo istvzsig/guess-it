@@ -5,11 +5,12 @@ import { Subscription } from 'rxjs';
 
 import { QuestionService } from '../services/question.service';
 import { QuestionModel } from 'src/app/models/question.model';
+import { DecodeHtmlPipe } from '../pipes/decodeHtml.pipe';
 
 @Component({
   selector: 'app-game',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DecodeHtmlPipe],
   templateUrl: './game.component.html',
   styleUrls: ['./game.component.css'],
 })
