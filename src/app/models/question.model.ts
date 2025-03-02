@@ -25,5 +25,5 @@ export interface QuestionModel
     'correct_answer' | 'incorrect_answers'
   > {
   id: string;
-  answers: string[] | null;
+  answers: Answer[] | null;
 }

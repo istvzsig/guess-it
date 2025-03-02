@@ -1,11 +1,17 @@
 @if(randomQuestion) {
 <p>Category: {{ randomQuestion.category }}</p>
-<p>Question: {{ randomQuestion.question.toString() }}</p>
+<h3>Question: {{ randomQuestion.question.toString() }}</h3>
 <p>Difficulty: {{ randomQuestion.difficulty }}</p>
 
-@for (answer of randomQuestion.answers; track answer) {
-<p>{{ answer }}</p>
-}
+<div>
+  <!-- prettier-ignore -->
+  @for( answer of randomQuestion.answers; track answer) {
+  @for(option of answer | keyvalue; track option) {
+  <p>{{ option.key }}: {{ option.value }}</p>
+  }
+  }
+</div>
+
 
 <button [disabled]="" (click)="updateNextQuestion()">NEXT</button>
 } @else {
