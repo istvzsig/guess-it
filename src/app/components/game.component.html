@@ -1,7 +1,12 @@
 @if(randomQuestion) {
 <p>Category: {{ randomQuestion.category }}</p>
-<p>Question: {{ randomQuestion.question }}</p>
+<p>Question: {{ randomQuestion.question.toString() }}</p>
 <p>Difficulty: {{ randomQuestion.difficulty }}</p>
+
+@for (answer of randomQuestion.answers; track answer) {
+<p>{{ answer }}</p>
+}
+
 <button [disabled]="" (click)="updateNextQuestion()">NEXT</button>
 } @else {
 <p>No data available.</p>

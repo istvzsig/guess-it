@@ -7,6 +7,18 @@ export interface APIResponseQuestionModel {
   type: string;
 }
 
+export enum AnswerOption {
+  A = 'A',
+  B = 'B',
+  C = 'C',
+  D = 'D',
+  E = 'E',
+}
+
+export interface Answer {
+  [key: string]: string;
+}
+
 export interface QuestionModel
   extends Omit<
     APIResponseQuestionModel,

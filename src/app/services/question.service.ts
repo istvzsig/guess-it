@@ -7,6 +7,8 @@ import { OPEN_TDB_API_URL } from 'src/app/environments/api.environment';
 
 import { APIRequestModel, APIResponseModel } from 'src/app/models/api.model';
 import {
+  Answer,
+  AnswerOption,
   APIResponseQuestionModel,
   QuestionModel,
 } from 'src/app/models/question.model';
@@ -53,13 +55,18 @@ export class QuestionService {
           if (response.response_code === 0) {
             const question: APIResponseQuestionModel = response.results[0];
 
+            const combinedAnswers = [
+              question.correct_answer,
+              ...question.incorrect_answers,
+            ];
+            this.formatAnswers(combinedAnswers);
             const newQuestion: QuestionModel = {
               id: this.generateQuestionId(question),
               question: question.question,
               category: question.category,
               difficulty: question.difficulty,
               type: question.type,
-              answers: [question.correct_answer, ...question.incorrect_answers],
+              answers: this.formatAnswers(combinedAnswers),
             };
 
             this._cacheService.set<QuestionModel>(newQuestion.id, newQuestion);
@@ -82,5 +89,22 @@ export class QuestionService {
           this.setNextQuestion(response.data);
         }
       });
+  }
+
+  private formatAnswers(answers: string[] | null): string[] {
+    if (!answers || answers.length === 0) {
+      return ['No answers available.'];
+    }
+
+    const enumAnswers = answers.map((answer, index) => {
+      const option =
+        AnswerOption[
+          Object.keys(AnswerOption)[index] as keyof typeof AnswerOption
+        ];
+      console.log(option, answer);
+      return `${option}: ${answer}`;
+    });
+
+    return enumAnswers;
   }
 }
