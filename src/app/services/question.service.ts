@@ -12,7 +12,10 @@ import {
   APIResponseQuestionModel,
   QuestionModel,
 } from 'src/app/models/question.model';
+
 import { CacheService } from './cache.service';
+
+const DUMMY_CACHE_KEY = 'DUMMY_CACHE_KEY';
 
 @Injectable({
   providedIn: 'root',
@@ -22,13 +25,13 @@ export class QuestionService {
   private _cacheService = inject(CacheService);
   // private _errorService = inject();
 
-  public randomQuestionSubject$ = new BehaviorSubject<QuestionModel | null>(
-    null
-  );
+  public isLoading = false;
 
-  public setRandomQuestion(): void {
+  public questionSubject$ = new BehaviorSubject<QuestionModel | null>(null);
+
+  public setQuestion(): void {
     const cachedQuestion: QuestionModel | undefined =
-      this._cacheService.get('asdsds');
+      this._cacheService.get(DUMMY_CACHE_KEY);
 
     if (cachedQuestion) {
       console.log('Question is set from cache:', cachedQuestion);
@@ -40,7 +43,7 @@ export class QuestionService {
   }
 
   private setNextQuestion(question: QuestionModel): void {
-    this.randomQuestionSubject$.next(question);
+    this.questionSubject$.next(question);
   }
 
   private generateQuestionId(question: APIResponseQuestionModel): string {
@@ -48,6 +51,11 @@ export class QuestionService {
   }
 
   private fetchRandomQuestion(): void {
+    if (this.isLoading) {
+      console.warn('Already loading question. Skipping request.');
+      return;
+    }
+
     this._http
       .get<APIRequestModel>(OPEN_TDB_API_URL)
       .pipe(
@@ -59,9 +67,12 @@ export class QuestionService {
               question.correct_answer,
               ...question.incorrect_answers,
             ];
+
             this.formatAnswers(combinedAnswers);
+
             const newQuestion: QuestionModel = {
               id: this.generateQuestionId(question),
+              // id: DUMMY_CACHE_KEY,
               question: question.question,
               category: question.category,
               difficulty: question.difficulty,
@@ -73,26 +84,36 @@ export class QuestionService {
 
             return { data: newQuestion };
           }
+
           return {
             error: new Error('Error while fetching question.'),
           };
         }),
         shareReplay(1)
       )
-      .subscribe((response) => {
-        if (response.error) {
-          // TODO: Handle error in UI
-          // this._errorService.setError('')
-          return;
-        }
-        if (response.data) {
-          this.setNextQuestion(response.data);
-        }
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+
+          if (response.error) {
+            console.error(response.error);
+            return;
+          }
+
+          if (response.data) {
+            this.setNextQuestion(response.data);
+          }
+        },
+        error: (err) => {
+          this.isLoading = false;
+          console.error('HTTP Error:', err);
+        },
       });
   }
 
   private formatAnswers(answers: string[] | null): Answer[] | null {
     if (!answers || answers.length === 0) {
+      console.warn('No answers available.');
       return null;
     }
 

@@ -16,27 +16,27 @@ import { DecodeHtmlPipe } from '../pipes/decodeHtml.pipe';
 })
 export class GameComponent implements OnInit, OnDestroy {
   private _questionService = inject(QuestionService);
-  private subscription: Subscription = new Subscription();
 
-  public randomQuestion: QuestionModel | null = null;
+  private _questionSubscription: Subscription = new Subscription();
+
+  public question: QuestionModel | null = null;
 
   constructor() {
-    this._questionService.setRandomQuestion();
+    this._questionService.setQuestion();
   }
 
   ngOnInit(): void {
-    this.subscription = this._questionService.randomQuestionSubject$.subscribe(
-      (question) => {
-        this.randomQuestion = question;
-      }
-    );
+    this._questionSubscription =
+      this._questionService.questionSubject$.subscribe((question) => {
+        this.question = question;
+      });
   }
 
-  public updateNextQuestion(): void {
-    this._questionService.setRandomQuestion();
+  public updateQuestion(): void {
+    this._questionService.setQuestion();
   }
 
   ngOnDestroy(): void {
-    this.subscription.unsubscribe();
+    this._questionSubscription.unsubscribe();
   }
 }

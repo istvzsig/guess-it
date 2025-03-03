@@ -1,14 +1,16 @@
-@if(randomQuestion) {
-<p>Category: {{ randomQuestion.category }}</p>
-<h3>Question: {{ randomQuestion.question.toString() }}</h3>
+<!-- <h1>LOADING... {{ isLoading }}</h1> -->
+
+@if(question) {
+<p>Category: {{ question.category | decodeHtml }}</p>
+<h3>Question: {{ question.question | decodeHtml }}</h3>
 <p>
-  Difficulty: {{ randomQuestion.difficulty[0].toUpperCase()
-  + randomQuestion.difficulty.slice(1, randomQuestion.difficulty.length)}}
+  Difficulty: {{ question.difficulty[0].toUpperCase()
+  + question.difficulty.slice(1, question.difficulty.length) | decodeHtml }}
 </p>
 
 <div>
   <!-- prettier-ignore -->
-  @for( answer of randomQuestion.answers; track answer) {
+  @for( answer of question.answers; track answer) {
   @for(option of answer | keyvalue; track option) {
   <p>{{ option.key }}: {{ option.value | decodeHtml }}</p>
   }
@@ -16,7 +18,7 @@
 </div>
 
 
-<button [disabled]="" (click)="updateNextQuestion()">NEXT</button>
+<button [disabled]="" (click)="updateQuestion()">NEXT</button>
 } @else {
 <p>No data available.</p>
 }
