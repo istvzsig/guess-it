@@ -3,7 +3,10 @@ import { inject, Injectable } from '@angular/core';
 
 import { BehaviorSubject, map, shareReplay } from 'rxjs';
 
-import { OPEN_TDB_API_URL } from 'src/app/environments/api.environment';
+import {
+  DUMMY_CACHE_KEY,
+  OPEN_TDB_API_URL,
+} from 'src/app/environments/api.environment';
 
 import { APIRequestModel, APIResponseModel } from 'src/app/models/api.model';
 import {
@@ -14,8 +17,7 @@ import {
 } from 'src/app/models/question.model';
 
 import { CacheService } from './cache.service';
-
-const DUMMY_CACHE_KEY = 'DUMMY_CACHE_KEY';
+import { LoadingService } from './loading.service';
 
 @Injectable({
   providedIn: 'root',
@@ -23,11 +25,10 @@ const DUMMY_CACHE_KEY = 'DUMMY_CACHE_KEY';
 export class QuestionService {
   private _http = inject(HttpClient);
   private _cacheService = inject(CacheService);
+  private _loadingService = inject(LoadingService);
   // private _errorService = inject();
 
-  public isLoading = false;
-
-  public questionSubject$ = new BehaviorSubject<QuestionModel | null>(null);
+  public question$ = new BehaviorSubject<QuestionModel | null>(null);
 
   public setQuestion(): void {
     const cachedQuestion: QuestionModel | undefined =
@@ -43,18 +44,24 @@ export class QuestionService {
   }
 
   private setNextQuestion(question: QuestionModel): void {
-    this.questionSubject$.next(question);
+    this.question$.next(question);
   }
 
   private generateQuestionId(question: APIResponseQuestionModel): string {
-    return question.question.split(' ').join('').slice(0, 16);
+    return this.generateStringId(question.question);
+  }
+
+  private generateStringId(str: string, len = 16): string {
+    return str.split(' ').join('').slice(0, len);
   }
 
   private fetchRandomQuestion(): void {
-    if (this.isLoading) {
-      console.warn('Already loading question. Skipping request.');
+    if (this._loadingService.isLoading$.getValue()) {
+      console.warn('Skipping duplicate request.');
       return;
     }
+
+    this._loadingService.setLoading(true);
 
     this._http
       .get<APIRequestModel>(OPEN_TDB_API_URL)
@@ -93,8 +100,7 @@ export class QuestionService {
       )
       .subscribe({
         next: (response) => {
-          this.isLoading = false;
-
+          this._loadingService.setLoading(false);
           if (response.error) {
             console.error(response.error);
             return;
@@ -105,7 +111,7 @@ export class QuestionService {
           }
         },
         error: (err) => {
-          this.isLoading = false;
+          this._loadingService.setLoading(false);
           console.error('HTTP Error:', err);
         },
       });
