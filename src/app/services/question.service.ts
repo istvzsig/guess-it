@@ -1,14 +1,18 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { BehaviorSubject, map, shareReplay } from 'rxjs';
+import { BehaviorSubject, delay, map, retry, shareReplay } from 'rxjs';
 
 import {
   DUMMY_CACHE_KEY,
   OPEN_TDB_API_URL,
 } from 'src/app/environments/api.environment';
 
-import { APIRequestModel, APIResponseModel } from 'src/app/models/api.model';
+import {
+  APIError,
+  APIRequestModel,
+  APIResponseModel,
+} from 'src/app/models/api.model';
 import {
   Answer,
   AnswerOption,
@@ -18,6 +22,7 @@ import {
 
 import { CacheService } from './cache.service';
 import { LoadingService } from './loading.service';
+import { ErrorService } from './error.service';
 
 @Injectable({
   providedIn: 'root',
@@ -26,13 +31,13 @@ export class QuestionService {
   private _http = inject(HttpClient);
   private _cacheService = inject(CacheService);
   private _loadingService = inject(LoadingService);
-  // private _errorService = inject();
+  private _errorService = inject(ErrorService);
 
   public question$ = new BehaviorSubject<QuestionModel | null>(null);
 
   public setQuestion(): void {
     const cachedQuestion: QuestionModel | undefined =
-      this._cacheService.get(DUMMY_CACHE_KEY);
+      this._cacheService.get(DUMMY_CACHE_KEY); // TODO: Fix caching
 
     if (cachedQuestion) {
       console.log('Question is set from cache:', cachedQuestion);
@@ -55,9 +60,38 @@ export class QuestionService {
     return str.split(' ').join('').slice(0, len);
   }
 
+  private createQuestionModel(
+    apiQuestion: APIResponseQuestionModel,
+  ): QuestionModel {
+    const combinedAnswers = [
+      apiQuestion.correct_answer,
+      ...apiQuestion.incorrect_answers,
+    ];
+
+    return {
+      id: this.generateQuestionId(apiQuestion),
+      // id: DUMMY_CACHE_KEY, // Debug
+      question: apiQuestion.question,
+      category: apiQuestion.category,
+      difficulty: apiQuestion.difficulty,
+      type: apiQuestion.type,
+      answers: this.shuffleAnswers(combinedAnswers),
+    };
+  }
+
+  private shuffleAnswers(answers: string[]): Answer[] | null {
+    for (let i = answers.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [answers[i], answers[j]] = [answers[j], answers[i]];
+    }
+
+    return this.formatAnswers(answers);
+  }
+
   private fetchRandomQuestion(): void {
     if (this._loadingService.isLoading$.getValue()) {
       console.warn('Skipping duplicate request.');
+
       return;
     }
 
@@ -66,43 +100,31 @@ export class QuestionService {
     this._http
       .get<APIRequestModel>(OPEN_TDB_API_URL)
       .pipe(
+        // retry(5),
         map((response): APIResponseModel => {
+          this._loadingService.setLoading(false); // Ensure loading is stopped regardless of response
+
           if (response.response_code === 0) {
             const question: APIResponseQuestionModel = response.results[0];
-
-            const combinedAnswers = [
-              question.correct_answer,
-              ...question.incorrect_answers,
-            ];
-
-            this.formatAnswers(combinedAnswers);
-
-            const newQuestion: QuestionModel = {
-              id: this.generateQuestionId(question),
-              // id: DUMMY_CACHE_KEY,
-              question: question.question,
-              category: question.category,
-              difficulty: question.difficulty,
-              type: question.type,
-              answers: this.formatAnswers(combinedAnswers),
-            };
-
+            const newQuestion = this.createQuestionModel(question);
             this._cacheService.set<QuestionModel>(newQuestion.id, newQuestion);
-
             return { data: newQuestion };
           }
 
+          // Handle specific response codes if needed
+          const errorMessage = this._errorService.getErrorMessage(
+            response.response_code,
+          );
           return {
-            error: new Error('Error while fetching question.'),
+            error: new Error(errorMessage),
           };
         }),
-        shareReplay(1)
+        shareReplay(1),
       )
       .subscribe({
         next: (response) => {
-          this._loadingService.setLoading(false);
           if (response.error) {
-            console.error(response.error);
+            this._errorService.handleError(response.error); // Handle the error in a dedicated method
             return;
           }
 
@@ -111,8 +133,8 @@ export class QuestionService {
           }
         },
         error: (err) => {
-          this._loadingService.setLoading(false);
-          console.error('HTTP Error:', err);
+          this._loadingService.setLoading(false); // Stop loading on HTTP error
+          this._errorService.handleHttpError(err); // Handle HTTP errors in a dedicated method
         },
       });
   }
@@ -124,12 +146,18 @@ export class QuestionService {
     }
 
     return answers.map((answer, index) => {
-      const option =
-        AnswerOption[
-          Object.keys(AnswerOption)[index] as keyof typeof AnswerOption
-        ];
+      const optionKeys = Object.keys(AnswerOption) as Array<
+        keyof typeof AnswerOption
+      >;
 
-      return { [option]: answer };
+      if (index >= 0 && index < optionKeys.length) {
+        const optionKey = optionKeys[index];
+        const option = AnswerOption[optionKey];
+        return { [option]: answer };
+      } else {
+        return {};
+        // TODO: Handle the case where index is out of bounds
+      }
     });
   }
 }

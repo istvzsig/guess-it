@@ -1,11 +1,12 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { Subscription } from 'rxjs';
-
-import { QuestionService } from '../services/question.service';
-import { QuestionModel } from 'src/app/models/question.model';
 import { DecodeHtmlPipe } from '../pipes/decodeHtml.pipe';
+
+import { QuestionModel } from 'src/app/models/question.model';
+
+import { LoadingService } from '../services/loading.service';
+import { QuestionService } from '../services/question.service';
 
 @Component({
   selector: 'app-game',
@@ -14,29 +15,24 @@ import { DecodeHtmlPipe } from '../pipes/decodeHtml.pipe';
   templateUrl: './game.component.html',
   styleUrls: ['./game.component.css'],
 })
-export class GameComponent implements OnInit, OnDestroy {
+// TODO: Refactor question UI stuff to component
+export class GameComponent implements OnInit {
+  private _loadingService = inject(LoadingService);
   private _questionService = inject(QuestionService);
 
-  private _questionSubscription: Subscription = new Subscription();
+  get question(): QuestionModel | null {
+    return this._questionService.question$.getValue();
+  }
 
-  public question: QuestionModel | null = null;
-
-  constructor() {
-    this._questionService.setQuestion();
+  get isLoading(): boolean {
+    return this._loadingService.isLoading$.getValue();
   }
 
   ngOnInit(): void {
-    this._questionSubscription =
-      this._questionService.questionSubject$.subscribe((question) => {
-        this.question = question;
-      });
+    this.updateQuestion();
   }
 
   public updateQuestion(): void {
     this._questionService.setQuestion();
-  }
-
-  ngOnDestroy(): void {
-    this._questionSubscription.unsubscribe();
   }
 }
