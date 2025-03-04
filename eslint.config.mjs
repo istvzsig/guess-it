@@ -19,7 +19,9 @@ export default [
       '**/*.mjs',
     ],
     // Override or add rules here
-    rules: {},
+    rules: {
+      'prettier/prettier': 'error', // Enforce Prettier formatting
+    },
   },
   ...nx.configs['flat/angular'],
   ...nx.configs['flat/angular-template'],
@@ -47,6 +49,8 @@ export default [
   {
     files: ['**/*.html'],
     // Override or add rules here
-    rules: {},
+    rules: {
+      'prettier/prettier': 'off', // Disable Prettier formatting for HTML files
+    },
   },
 ];
