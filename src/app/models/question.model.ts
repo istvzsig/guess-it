@@ -1,26 +1,5 @@
-export interface APIResponseQuestionModel {
-  question: string;
-  correct_answer: string;
-  incorrect_answers: string[];
-  category: string;
-  difficulty: string;
-  type: string;
-}
-
-export enum AnswerOption {
-  A = 'A',
-  B = 'B',
-  C = 'C',
-  D = 'D',
-  E = 'E',
-  F = 'F',
-  G = 'G',
-  H = 'H',
-}
-
-export interface Answer {
-  [key: string]: string;
-}
+import { Answer } from './answer.model';
+import { APIResponseQuestionModel } from './api.model';
 
 export interface QuestionModel
   extends Omit<
